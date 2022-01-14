@@ -49,6 +49,17 @@ DEPS := $(wildcard */*.d */*/*.d)
 # never delete
 .SECONDARY: $(OBJS) $(patsubst %.cpp,%.o,$(wildcard */*.cpp))
 
+### SYMPHONY ###
+
+SYMPHONYLIB = libSymphony.so
+
+GMW = $(OT) $(LIBSIMPLEOT) GC/SemiSecret.o GC/SemiPrep.o
+
+$(SYMPHONYLIB): $(GMW) $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
+	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
+
+################
+
 
 all: arithmetic binary gen_input online offline externalIO bmr ecdsa
 vm: arithmetic binary

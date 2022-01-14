@@ -27,9 +27,12 @@ public:
     typename T::Input& input;
 
     ProtocolSet(Player& P, typename T::mac_key_type mac_key) :
-            usage(P.num_players()), output(mac_key), preprocessing(0, usage), processor(
-                    output, preprocessing, P), protocol(processor.protocol), input(
-                    processor.input)
+            usage(P.num_players()),
+            output(mac_key),
+            preprocessing(0, usage),
+            processor(output, preprocessing, P),
+            protocol(processor.protocol),
+            input(processor.input)
     {
     }
 
