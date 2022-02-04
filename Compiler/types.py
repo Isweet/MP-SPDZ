@@ -1698,6 +1698,12 @@ class personal(Tape._no_truth):
     def _div_san(self):
         return self._v.conv((library.get_player_id() == self.player)._v).if_else(self._v, 1)
 
+    def __setitem__(self, index, value):
+        self._san(value)
+        self._v[index] = value
+
+    __getitem__ = lambda self, index: personal(self.player, self._v[index])
+
     __add__ = lambda self, other: personal(self.player, self._san(other) + other)
     __sub__ = lambda self, other: personal(self.player, self._san(other) - other)
     __mul__ = lambda self, other: personal(self.player, self._san(other) * other)
@@ -2329,16 +2335,20 @@ class sint(_secret, _int):
         return stop, shares
 
     @staticmethod
-    def write_to_file(shares):
+    def write_to_file(shares, position=None):
         """ Write shares to ``Persistence/Transactions-P<playerno>.data``
         (appending at the end).
 
-        :param: shares (list or iterable of sint)
+        :param shares: (list or iterable of sint)
+        :param position: start position (int/regint/cint),
+            defaults to end of file
         """
         for share in shares:
             assert isinstance(share, sint)
             assert share.size == 1
-        writesharestofile(*shares)
+        if position is None:
+            position = -1
+        writesharestofile(regint.conv(position), *shares)
 
     @vectorized_classmethod
     def load_mem(cls, address, mem_type=None):
@@ -3922,13 +3932,15 @@ class _single(_number, _secret_structure):
         return stop, [cls._new(x) for x in shares]
 
     @classmethod
-    def write_to_file(cls, shares):
+    def write_to_file(cls, shares, position=None):
         """ Write shares of integer representation to
-        ``Persistence/Transactions-P<playerno>.data`` (appending at the end).
+        ``Persistence/Transactions-P<playerno>.data``.
 
-        :param: shares (list or iterable of sfix)
+        :param shares: (list or iterable of sfix)
+        :param position: start position (int/regint/cint),
+            defaults to end of file
         """
-        cls.int_type.write_to_file([x.v for x in shares])
+        cls.int_type.write_to_file([x.v for x in shares], position)
 
     def store_in_mem(self, address):
         """ Store in memory by public address. """
@@ -4262,6 +4274,7 @@ class sfix(_fix):
     :params _v: int/float/regint/cint/sint/sfloat
     """
     int_type = sint
+    bit_type = sintbit
     clear_type = cfix
 
     @vectorized_classmethod
@@ -5389,11 +5402,14 @@ class Array(_vectorizable):
         self.assign(shares)
         return stop
 
-    def write_to_file(self):
+    def write_to_file(self, position=None):
         """ Write shares of integer representation to
-        ``Persistence/Transactions-P<playerno>.data`` (appending at the end).
+        ``Persistence/Transactions-P<playerno>.data``.
+
+        :param position: start position (int/regint/cint),
+            defaults to end of file
         """
-        self.value_type.write_to_file(list(self))
+        self.value_type.write_to_file(list(self), position)
 
     def __add__(self, other):
         """ Vector addition.
@@ -5490,6 +5506,14 @@ class Array(_vectorizable):
         :param: player (default all)
         """
         self.get_vector().binary_output(player)
+
+    def reveal_to(self, player):
+        """ Reveal secret array to :py:obj:`player`.
+
+        :param player: public integer (int/regint/cint)
+        :returns: :py:class:`personal` containing an array
+        """
+        return personal(player, self.create_from(self[:].reveal_to(player)._v))
 
     def sort(self, n_threads=None):
         """
@@ -5723,13 +5747,20 @@ class SubMultiArray(_vectorizable):
             def _(i):
                 self[i].input_from(player, budget=budget, raw=raw)
 
-    def write_to_file(self):
+    def write_to_file(self, position=None):
         """ Write shares of integer representation to
-        ``Persistence/Transactions-P<playerno>.data`` (appending at the end).
+        ``Persistence/Transactions-P<playerno>.data``.
+
+        :param position: start position (int/regint/cint),
+            defaults to end of file
         """
         @library.for_range(len(self))
         def _(i):
-            self[i].write_to_file()
+            if position is None:
+                my_pos = None
+            else:
+                my_pos = position + i * self[i].total_size()
+            self[i].write_to_file(my_pos)
 
     def read_from_file(self, start):
         """ Read content from ``Persistence/Transactions-P<playerno>.data``.
