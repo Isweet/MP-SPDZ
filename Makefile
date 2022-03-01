@@ -1,4 +1,3 @@
-
 include CONFIG
 
 MATH = $(patsubst %.cpp,%.o,$(wildcard Math/*.cpp))
@@ -51,15 +50,50 @@ DEPS := $(wildcard */*.d */*/*.d)
 
 ### SYMPHONY ###
 
-SYMPHONYLIB = libSymphony.so
+SYMPHONY_INCLUDE_MATH       = $(wildcard Math/*.h Math/*.hpp)
+SYMPHONY_INCLUDE_TOOLS      = $(wildcard Tools/*.h Tools/*.hpp)
+SYMPHONY_INCLUDE_NETWORKING = $(wildcard Networking/*.h Networking/*.hpp)
+SYMPHONY_INCLUDE_PROCESSOR  = $(wildcard Processor/*.h Processor/*.hpp)
+SYMPHONY_INCLUDE_OT         = $(wildcard OT/*.h OT/*.hpp)
+SYMPHONY_INCLUDE_GC         = $(wildcard GC/*.h GC/*.hpp)
+SYMPHONY_INCLUDE_PROTOCOLS  = $(wildcard Protocols/*.h Protocols/*.hpp)
+SYMPHONY_INCLUDE_MACHINES   = $(wildcard Machines/*.h Machines/*.hpp)
+SYMPHONY_INCLUDE_BMR        = $(wildcard BMR/**/*.h BMR/**/*.hpp)
+SYMPHONY_INCLUDE_FHE        = $(wildcard FHE/*.h FHE/*.hpp)
+SYMPHONY_INCLUDE_FHEOFFLINE = $(wildcard FHEOffline/*.h FHEOffline/*.hpp)
+SYMPHONY_INCLUDE_ECDSA      = ECDSA/P256Element.h
+
+SYMPHONY_LIB     = libbackend-spdz.dylib
+SYMPHONY_INCLUDE = $(SYMPHONY_INCLUDE_MATH) \
+                   $(SYMPHONY_INCLUDE_TOOLS) \
+                   $(SYMPHONY_INCLUDE_NETWORKING) \
+                   $(SYMPHONY_INCLUDE_PROCESSOR) \
+                   $(SYMPHONY_INCLUDE_OT) \
+                   $(SYMPHONY_INCLUDE_GC) \
+                   $(SYMPHONY_INCLUDE_PROTOCOLS) \
+                   $(SYMPHONY_INCLUDE_MACHINES) \
+                   $(SYMPHONY_INCLUDE_BMR) \
+                   $(SYMPHONY_INCLUDE_FHE) \
+                   $(SYMPHONY_INCLUDE_FHEOFFLINE) \
+                   $(SYMPHONY_INCLUDE_ECDSA)
 
 GMW = $(OT) $(LIBSIMPLEOT) GC/SemiSecret.o GC/SemiPrep.o
 
-$(SYMPHONYLIB): $(GMW) $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
+$(SYMPHONY_LIB): $(GMW) $(PROCESSOR) $(COMMONOBJS) GC/square64.o GC/Instruction.o
 	$(CXX) $(CFLAGS) -shared -o $@ $^ $(LDLIBS)
 
-################
+$(SYMPHONY_OUT)/lib/$(SYMPHONY_LIB): $(SYMPHONY_LIB)
+	mkdir -p $(SYMPHONY_OUT)/lib
+	cp $(SYMPHONY_LIB) $(SYMPHONY_OUT)/lib
 
+$(SYMPHONY_OUT)/include/%: %
+	mkdir -p $(dir $@)
+	cp $< $@
+
+.PHONY: install-spdz
+install-spdz: $(addprefix $(SYMPHONY_OUT)/include/,$(SYMPHONY_INCLUDE)) $(SYMPHONY_OUT)/lib/$(SYMPHONY_LIB)
+
+################
 
 all: arithmetic binary gen_input online offline externalIO bmr ecdsa
 vm: arithmetic binary
