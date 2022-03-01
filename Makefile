@@ -63,7 +63,7 @@ SYMPHONY_INCLUDE_FHE        = $(wildcard FHE/*.h FHE/*.hpp)
 SYMPHONY_INCLUDE_FHEOFFLINE = $(wildcard FHEOffline/*.h FHEOffline/*.hpp)
 SYMPHONY_INCLUDE_ECDSA      = ECDSA/P256Element.h
 
-SYMPHONY_LIB     = libbackend-spdz.dylib
+SYMPHONY_LIB     = libmpspdz.dylib
 SYMPHONY_INCLUDE = $(SYMPHONY_INCLUDE_MATH) \
                    $(SYMPHONY_INCLUDE_TOOLS) \
                    $(SYMPHONY_INCLUDE_NETWORKING) \
